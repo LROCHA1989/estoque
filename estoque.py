@@ -21,6 +21,33 @@ percentual = st.number_input(
     min_value=0.0, max_value=100.0, step=0.1
 )
 
+# Função para adicionar cabeçalho em cada página
+def adicionar_cabecalho(page, percentual, x_positions, logo_file):
+    # Inserir logo
+    try:
+        logo_pixmap = fitz.Pixmap(logo_file)
+        logo_width = 100
+        logo_height = int(logo_width * logo_pixmap.height / logo_pixmap.width)
+        x_pos = 842 - logo_width - 20
+        y_pos = 20
+        page.insert_image(
+            fitz.Rect(x_pos, y_pos, x_pos + logo_width, y_pos + logo_height),
+            pixmap=logo_pixmap
+        )
+    except Exception as e:
+        st.warning(f"Não foi possível inserir a logo: {e}")
+
+    # Cabeçalho
+    header = f"Estoque GP54 - Itens que representam até {100 - percentual:.2f}% do total da coluna PT\n"
+    page.insert_text((150, 50), header, fontsize=12, fontname="helv", fill=(0, 0, 0))
+
+    # Títulos das colunas
+    y = 90
+    columns = ["CODIGO", "DESCRICAO", "QT", "CM", "PT", "%_PT", "%_ACUMULADO"]
+    for i, col in enumerate(columns):
+        page.insert_text((x_positions[i], y), col, fontsize=10, fontname="helv", fill=(0, 0, 0))
+    return y + 15
+
 # Botão para calcular
 if uploaded_file and st.button("Filtrar e Gerar PDF"):
     # Ler o arquivo
@@ -77,43 +104,15 @@ if uploaded_file and st.button("Filtrar e Gerar PDF"):
         df_final.to_excel(output_excel, index=False, engine="openpyxl")
         st.download_button("📥 Baixar Excel", data=output_excel.getvalue(), file_name="resultado_filtrado.xlsx")
 
-        # Botão para baixar em CSV
-        #output_csv = df_final.to_csv(index=False).encode("utf-8")
-        #st.download_button("📥 Baixar CSV", data=output_csv, file_name="resultado_filtrado.csv")
-
-        # Gerar PDF com logotipo
+        # Gerar PDF com logotipo e cabeçalho em todas as páginas
         pdf_buffer = BytesIO()
         doc = fitz.open()
         page = doc.new_page(width=842, height=595)  # A4 landscape
 
-        # Inserir logo no canto superior direito
-        try:
-            logo_pixmap = fitz.Pixmap(logo_file)
-            logo_width = 100
-            logo_height = int(logo_width * logo_pixmap.height / logo_pixmap.width)
-            x_pos = 842 - logo_width - 20
-            y_pos = 20
-            page.insert_image(
-                fitz.Rect(x_pos, y_pos, x_pos + logo_width, y_pos + logo_height),
-                pixmap=logo_pixmap
-            )
-        except Exception as e:
-            st.warning(f"Não foi possível inserir a logo: {e}")
-
-  
-        # Cabeçalho
-        header = f"Estoque GP54 - Itens que representam até {100 - percentual:.2f}% do total da coluna PT\n"
-        page.insert_text((150, 50), header, fontsize=12, fontname="helv", fill=(0, 0, 0))
-
-        # Definir colunas para exibir
         columns = ["CODIGO", "DESCRICAO", "QT", "CM", "PT", "%_PT", "%_ACUMULADO"]
         x_positions = [50, 120, 400, 460, 520, 580, 660]
 
-        # Inserir cabeçalhos
-        y = 90
-        for i, col in enumerate(columns):
-            page.insert_text((x_positions[i], y), col, fontsize=10, fontname="helv", fill=(0, 0, 0))
-        y += 15
+        y = adicionar_cabecalho(page, percentual, x_positions, logo_file)
 
         # Inserir dados linha por linha
         for idx, row in df_final.iterrows():
@@ -131,7 +130,6 @@ if uploaded_file and st.button("Filtrar e Gerar PDF"):
             y += 15
             if y > 550:
                 page = doc.new_page(width=842, height=595)
-                y = 50
+                y = adicionar_cabecalho(page, percentual, x_positions, logo_file)
 
         doc.save(pdf_buffer)
-        st.download_button("📥 Baixar PDF", data=pdf_buffer.getvalue(), file_name="resultado_filtrado.pdf")
