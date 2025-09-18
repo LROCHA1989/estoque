@@ -133,3 +133,7 @@ if uploaded_file and st.button("Filtrar e Gerar PDF"):
                 y = adicionar_cabecalho(page, percentual, x_positions, logo_file)
 
         doc.save(pdf_buffer)
+        st.download_button("📥 Baixar PDF", data=pdf_buffer.getvalue(), 
+            
+    file_name="resultado_filtrado.pdf")
+
