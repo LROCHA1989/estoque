@@ -6,6 +6,8 @@ import base64
 import os
 from PIL import Image
 
+
+
 # Título da aplicação
 st.title("📦 Estoque - Filtro por Percentual da Coluna PT")
 
@@ -38,7 +40,7 @@ def adicionar_cabecalho(page, percentual, x_positions, logo_file):
         st.warning(f"Não foi possível inserir a logo: {e}")
 
     # Cabeçalho
-    header = f"Estoque GP54 - Itens que representam até {100 - percentual:.2f}% do total da coluna PT\n"
+    header = f"Estoque - Itens que representam até {100 - percentual:.2f}% do total da coluna PT\n"
     page.insert_text((150, 50), header, fontsize=12, fontname="helv", fill=(0, 0, 0))
 
     # Títulos das colunas
